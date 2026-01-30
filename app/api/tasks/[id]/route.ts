@@ -67,6 +67,9 @@ export async function DELETE(
       where: { id: id },
     });
 
+    console.log(existingTask);
+    
+
     if (!existingTask || existingTask.userId !== userId) {
       return new NextResponse("Unauthorized", { status: 403 });
     }

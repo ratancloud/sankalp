@@ -11,6 +11,16 @@ import {
   getIndiaWeekdayEnum,
   JS_DAY_TO_PRISMA,
 } from "@/lib/date-utils";
+import z from "zod";
+
+const createTaskSchema = z.object({
+  title: z.string().min(2).max(50),
+  description: z.string().max(200).optional(),
+  isPrivate: z.boolean().default(false),
+  date: z.coerce.date().transform(toIndiaBucket),
+  scheduledAt: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
+  duration: z.number().int().positive(),
+});
 
 const DAYS_AHEAD = 14;
 
@@ -153,6 +163,44 @@ export async function GET(req: NextRequest) {
     return new NextResponse("Invalid view", { status: 400 });
   } catch (error) {
     console.error("TASK GET ERROR:", error);
+    return new NextResponse("Internal Server Error", { status: 500 });
+  }
+}
+
+export async function POST(req: Request) {
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session?.user?.id) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    const json = await req.json();
+    const body = createTaskSchema.parse(json);
+
+    const task = await prisma.task.create({
+      data: {
+        userId: session.user.id,
+        title: body.title,
+        description: body.description,
+        isPrivate: body.isPrivate,
+        date: body.date,
+        scheduledAt: body.scheduledAt,
+        duration: body.duration,
+        status: "PENDING",
+        actualDuration: 0,
+      },
+    });
+
+    return NextResponse.json(task);
+  } catch (error) {
+    console.error("[TASKS_POST]", error);
+    if (error instanceof z.ZodError) {
+      return new NextResponse(JSON.stringify(error.issues), { status: 422 });
+    }
+
     return new NextResponse("Internal Server Error", { status: 500 });
   }
 }

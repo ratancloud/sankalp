@@ -101,7 +101,6 @@ export interface TaskSetting {
   duration: number | null;
   startDate: Date | string;
   endDate: Date | string;
-  timezone: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -161,11 +160,6 @@ export default function TaskForm({ initialData, onSuccess }: TaskFormProps) {
   const onSubmit = async (data: FormValues) => {
     setIsPending(true);
     try {
-      const payload = {
-        ...data,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      };
-
       const url =
         isEditMode && initialData?.id
           ? `/api/taskSetting/${initialData.id}`
@@ -176,7 +170,7 @@ export default function TaskForm({ initialData, onSuccess }: TaskFormProps) {
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(data),
       });
 
       const result = await response.json();
@@ -274,6 +268,9 @@ export default function TaskForm({ initialData, onSuccess }: TaskFormProps) {
                       mode="single"
                       selected={field.value}
                       onSelect={field.onChange}
+                      disabled={(date) =>
+                        date < new Date(new Date().setHours(0, 0, 0, 0))
+                      }
                       autoFocus
                     />
                   </PopoverContent>

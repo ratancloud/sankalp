@@ -12,11 +12,18 @@ import { TodayTaskList } from "@/components/task/TodayTaskList";
 import { Task } from "@/types/task";
 import EmptyState from "@/components/task/EmptyState";
 import { TaskStatus } from "@/generated/prisma/enums";
+import CreateTaskDialog from "@/components/task/CreateTaskDialog";
 
 export default function TaskPage() {
   const [activeTab, setActiveTab] = useState("today");
+  const [openCreateTask, setOpenCreateTask] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const onRefresh = () => {
+    setRefreshKey((prev) => prev + 1);
+  };
 
   useEffect(() => {
     let ignore = false;
@@ -46,7 +53,7 @@ export default function TaskPage() {
     return () => {
       ignore = true;
     };
-  }, [activeTab]);
+  }, [activeTab, refreshKey]);
 
   const completedCount =
     activeTab === "today"
@@ -57,21 +64,28 @@ export default function TaskPage() {
     tasks.length > 0 ? Math.round((completedCount / tasks.length) * 100) : 0;
 
   const handleStatusChange = async (id: string, newStatus: TaskStatus) => {
-    // 1. Optimistic Update
+    const updateData = {
+      status: newStatus,
+      ...(newStatus === "SKIPPED" ? { actualDuration: 0 } : {}),
+    };
+
     setTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, status: newStatus } : t)),
+      prev.map((t) => (t.id === id ? { ...t, ...updateData } : t)),
     );
 
-    // 2. API Call
     try {
-      await fetch(`/api/tasks/${id}`, {
+      const response = await fetch(`/api/tasks/${id}`, {
         method: "PATCH",
-        body: JSON.stringify({ status: newStatus }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updateData),
       });
-      // Optionally re-fetch or toast success
+
+      if (!response.ok) throw new Error("Failed to update");
+
+      toast.success("Task updated");
     } catch (e) {
+      console.log("Error on Update Status: ", e);
       toast.error("Failed to update status");
-      // Revert on error if needed
     }
   };
 
@@ -117,7 +131,10 @@ export default function TaskPage() {
 
         {activeTab === "today" && !loading && (
           <div className="hidden md:block">
-            <Button className="shadow-sm hover:shadow-md transition-all">
+            <Button
+              onClick={() => setOpenCreateTask(true)}
+              className="shadow-sm hover:shadow-md transition-all"
+            >
               <Plus className="mr-2 h-4 w-4" /> New Task
             </Button>
           </div>
@@ -235,6 +252,7 @@ export default function TaskPage() {
       {activeTab === "today" && !loading && (
         <div className="fixed bottom-24 right-4 z-50 md:hidden">
           <Button
+            onClick={() => setOpenCreateTask(true)}
             size="icon"
             className="h-14 w-14 rounded-full shadow-lg shadow-primary/25 transition-transform hover:scale-105 active:scale-95"
           >
@@ -243,6 +261,12 @@ export default function TaskPage() {
           </Button>
         </div>
       )}
+
+      <CreateTaskDialog
+        openCreateTask={openCreateTask}
+        setOpenCreateTask={setOpenCreateTask}
+        onRefresh={onRefresh}
+      />
     </div>
   );
 }
