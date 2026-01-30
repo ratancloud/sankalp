@@ -1,0 +1,163 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ROLE {
+  ADMIN
+  USER
+}
+
+model User {
+  id            String        @id
+  name          String
+  email         String
+  emailVerified Boolean       @default(false)
+  image         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  role          ROLE          @default(USER)
+  banned        Boolean?      @default(false)
+  banReason     String?
+  banExpires    DateTime?
+  sessions      Session[]
+  accounts      Account[]
+  taskSetting   TaskSetting[]
+  task          Task[]
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Session {
+  id             String   @id
+  expiresAt      DateTime
+  token          String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  ipAddress      String?
+  userAgent      String?
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  impersonatedBy String?
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+enum WeekDay {
+  Monday
+  Tuesday
+  Wednesday
+  Thursday
+  Friday
+  Saturday
+  Sunday
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  SKIPPED
+}
+
+model TaskSetting {
+  id     String @id @default(uuid())
+  userId String
+
+  // Content
+  title       String
+  description String?
+  isPrivate   Boolean @default(false)
+
+  // Scheduling Logic
+  repeatOn    WeekDay[]
+  scheduledAt String
+  duration    Int      @default(1800)
+
+  // Active Range
+  startDate DateTime @db.Date
+  endDate   DateTime @db.Date
+
+  // Meta
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks Task[]
+
+  @@index([userId])
+}
+
+model Task {
+  id            String  @id @default(uuid())
+  userId        String
+  taskSettingId String?
+
+  // Content 
+  title       String
+  description String?
+  isPrivate   Boolean @default(false)
+
+  // Progress
+  status   TaskStatus @default(PENDING)
+  duration       Int      @default(1800)
+  actualDuration Int      @default(0)
+
+  // Concrete Timing
+  date           DateTime @db.Date
+  scheduledAt    String
+
+  // Meta
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  taskSetting TaskSetting? @relation(fields: [taskSettingId], references: [id], onDelete: SetNull)
+
+  // Constraints
+  @@unique([taskSettingId, date])
+  @@index([userId, date])
+}
+
+
