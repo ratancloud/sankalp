@@ -111,6 +111,7 @@ export default function TaskPage() {
       await fetch(`/api/tasks/${id}`, { method: "DELETE" });
       toast.success("Task deleted");
     } catch (e) {
+      console.log("Task Delete Error", e);
       toast.error("Failed to delete task");
     }
   };

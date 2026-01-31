@@ -20,7 +20,8 @@ export async function PATCH(
 ) {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user?.id) return errorResponse("Unauthorized", 401);
+    if (!session?.user?.id)
+      return new NextResponse("Unauthorized", { status: 401 });
 
     const { id } = await context.params;
     const userId = session.user.id;
@@ -40,9 +41,26 @@ export async function PATCH(
       return new NextResponse("Unauthorized", { status: 403 });
     }
 
+    const dataToUpdate = { ...validation.data };
+    const finalActualDuration =
+      dataToUpdate.actualDuration ?? existingTask.actualDuration;
+    const finalPlannedDuration = dataToUpdate.duration ?? existingTask.duration;
+
+    if (finalActualDuration === 0) {
+      dataToUpdate.status = "PENDING";
+    }
+
+    if (finalActualDuration > finalPlannedDuration) {
+      dataToUpdate.status = "COMPLETED";
+    }
+
+    if (dataToUpdate.status === "SKIPPED") {
+      dataToUpdate.actualDuration = 0;
+    }
+
     const updatedTask = await prisma.task.update({
       where: { id: id },
-      data: validation.data,
+      data: dataToUpdate,
     });
 
     return NextResponse.json(updatedTask);
@@ -68,7 +86,6 @@ export async function DELETE(
     });
 
     console.log(existingTask);
-    
 
     if (!existingTask || existingTask.userId !== userId) {
       return new NextResponse("Unauthorized", { status: 403 });

@@ -1,5 +1,6 @@
 import { Task } from "@/types/task";
-import { TaskDateGroup } from "./cards/TaskDateGroup";
+import { UpcomingTaskCard } from "./cards/UpcomingTaskCard";
+import { UpcomingTaskGroup } from "./cards/UpcomingTaskGroup";
 
 function groupByDate(tasks: Task[]) {
   return tasks.reduce(
@@ -18,8 +19,12 @@ export function UpcomingTaskList({ tasks }: { tasks: Task[] }) {
 
   return (
     <div className="space-y-6">
-      {Object.entries(grouped).map(([date, items]) => (
-        <TaskDateGroup key={date} date={date} tasks={items} />
+      {Object.entries(grouped).map(([date, tasks]) => (
+        <UpcomingTaskGroup key={date} date={date} totalTask={tasks.length}>
+          {tasks.map((task, idx) => (
+            <UpcomingTaskCard key={idx} task={task} />
+          ))}
+        </UpcomingTaskGroup>
       ))}
     </div>
   );

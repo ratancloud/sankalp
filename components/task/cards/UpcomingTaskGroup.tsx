@@ -1,13 +1,14 @@
-import { Task } from "@/types/task";
-import { ScheduleTaskCard } from "./ScheduleTaskCard";
 import { format } from "date-fns";
+import { ReactNode } from "react";
 
-export function TaskDateGroup({
+export function UpcomingTaskGroup({
   date,
-  tasks,
+  totalTask,
+  children
 }: {
   date: string;
-  tasks: Task[];
+  totalTask: number;
+  children: ReactNode
 }) {
   return (
     <div className="space-y-3">
@@ -18,15 +19,13 @@ export function TaskDateGroup({
         </h2>
 
         <span className="text-xs text-muted-foreground">
-          {tasks.length} Tasks
+          {totalTask} Tasks
         </span>
       </div>
 
       {/* Tasks */}
       <div className="space-y-3">
-        {tasks.map((task) => (
-          <ScheduleTaskCard key={task.id} task={task} />
-        ))}
+        {children}
       </div>
     </div>
   );

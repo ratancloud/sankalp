@@ -223,14 +223,14 @@ export default function FocusPage({ params }: { params: { id: string } }) {
   return (
     <div className="relative mx-auto w-full max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8 pb-24 pt-8 md:py-8">
       {/* 1. Header Area */}
-      <div className="">
+      <div className="space-y-5">
         <Button
           onClick={handleExit}
           disabled={isSyncing}
           variant="outline"
           size="sm"
         >
-          <ChevronLeft className="mr-1 h-4 w-4" />
+          <ChevronLeft className="h-4 w-4" />
           Back
         </Button>
 
