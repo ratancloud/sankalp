@@ -253,7 +253,7 @@ export default function FocusPage({ params }: { params: { id: string } }) {
       </div>
 
       {/* 2. Main Timer Display */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 relative z-10">
+      <div className="flex-1 flex flex-col items-center justify-center px-6 relative z-10 space-y-5">
         {/* Ambient Breathing Glow */}
         <div
           className={cn(
@@ -263,7 +263,7 @@ export default function FocusPage({ params }: { params: { id: string } }) {
           )}
         />
 
-        <div className="text-center space-y-4 mb-10 relative z-10 max-w-md mx-auto">
+        <div className="text-center space-y-5 relative z-10 max-w-md mx-auto">
           <div className="flex items-center justify-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-wider opacity-60">
             <Target className="h-3.5 w-3.5" />
             <span>Target: {Math.floor(totalPlannedSeconds / 60)}m</span>
@@ -287,7 +287,7 @@ export default function FocusPage({ params }: { params: { id: string } }) {
         </div>
 
         {/* Linear Progress Bar */}
-        <div className="w-full max-w-xs mt-12 relative z-10 space-y-2">
+        <div className="w-full max-w-xs relative z-10 space-y-2">
           <div className="flex justify-between items-end px-1">
             <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
               Session Progress
@@ -316,7 +316,7 @@ export default function FocusPage({ params }: { params: { id: string } }) {
       </div>
 
       {/* 3. Controls Footer */}
-      <div className="p-6 md:p-12 pb-12 flex items-center justify-center gap-8 md:gap-12 z-20">
+      <div className="p-6 flex items-center justify-center gap-8 md:gap-12 z-20">
         {/* Reset (Secondary) */}
         <AlertDialog>
           <AlertDialogTrigger asChild>

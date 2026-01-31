@@ -35,10 +35,11 @@ import { Input } from "@/components/ui/input";
 import { Task } from "@/types/task";
 import { format, parse } from "date-fns";
 import { Label } from "@/components/ui/label";
+import { TaskStatus } from "@/generated/prisma/enums";
 
 interface TaskCardProps {
   task: Task;
-  onStatusChange: (id: string, newStatus: string) => Promise<void>;
+  onStatusChange: (id: string, newStatus: TaskStatus) => Promise<void>;
   onUpdateData: (id: string, data: { actualDuration: number }) => Promise<void>;
   onDelete: (id: string) => void;
 }
