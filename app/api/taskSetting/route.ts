@@ -3,9 +3,12 @@ import { z } from "zod";
 import { jsonResponse, errorResponse, handleZodError } from "@/lib/api-utils";
 import { toZonedTime } from "date-fns-tz";
 import { WeekDay } from "@/generated/prisma/enums";
-import { INDIA_TIMEZONE, JS_DAY_TO_PRISMA, toIndiaBucket } from "@/lib/date-utils";
+import {
+  INDIA_TIMEZONE,
+  JS_DAY_TO_PRISMA,
+  toIndiaBucket,
+} from "@/lib/date-utils";
 import { requireUser } from "@/lib/require-user";
-
 
 const createTaskSchema = z
   .object({
@@ -30,7 +33,7 @@ const createTaskSchema = z
 
 export async function POST(req: Request) {
   try {
-    const user = await requireUser()
+    const user = await requireUser();
 
     const body = await req.json();
     const validated = createTaskSchema.safeParse(body);
@@ -44,7 +47,7 @@ export async function POST(req: Request) {
     // 1. Get "Today" in India (UTC Midnight Bucket)
     const nowUtc = new Date();
     const todayDate = toIndiaBucket(nowUtc);
-    
+
     // 2. Get "Today's Weekday" in India
     const zonedNow = toZonedTime(nowUtc, INDIA_TIMEZONE);
     const todayEnum = JS_DAY_TO_PRISMA[zonedNow.getDay()];
@@ -56,10 +59,9 @@ export async function POST(req: Request) {
           ...data,
         },
       });
-      
-      const isActiveToday = 
-        todayDate >= setting.startDate && 
-        todayDate <= setting.endDate;
+
+      const isActiveToday =
+        todayDate >= setting.startDate && todayDate <= setting.endDate;
 
       const isRepeatDay = data.repeatOn.includes(todayEnum);
 
@@ -73,8 +75,8 @@ export async function POST(req: Request) {
             description: data.description,
             isPrivate: data.isPrivate,
 
-            date: todayDate, 
-            
+            date: todayDate,
+
             scheduledAt: data.scheduledAt,
             duration: data.duration,
 
@@ -89,6 +91,26 @@ export async function POST(req: Request) {
     return jsonResponse(result, 201);
   } catch (error) {
     console.error("POST Error:", error);
+    return errorResponse("Internal Server Error", 500);
+  }
+}
+
+export async function GET() {
+  try {
+    const user = await requireUser();
+
+    const tasks = await prisma.taskSetting.findMany({
+      where: {
+        userId: user.id,
+      },
+      orderBy: {
+        scheduledAt: "asc",
+      },
+    });
+
+    return jsonResponse(tasks, 201);
+  } catch (error) {
+    console.error("GET Error:", error);
     return errorResponse("Internal Server Error", 500);
   }
 }

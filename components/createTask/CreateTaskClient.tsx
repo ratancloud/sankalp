@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
+import React, { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Plus, ListTodo, Loader2 } from "lucide-react";
@@ -17,16 +17,36 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { TaskSetting } from "@/generated/prisma/client";
+import TaskSettingCardSkeleton from "../skelton/TaskSettingCardSkeleton";
 
-interface TasksPageClientProps {
-  tasks: TaskSetting[];
-}
-
-const TasksPageClient = ({ tasks }: TasksPageClientProps) => {
+const TasksPageClient = () => {
   const router = useRouter();
-
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  // State management
+  const [tasks, setTasks] = useState<TaskSetting[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch tasks on mount
+  const fetchTasks = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch("/api/taskSetting");
+      if (!response.ok) throw new Error("Failed to fetch tasks");
+      const data = await response.json();
+      setTasks(data);
+    } catch (error) {
+      toast.error("Could not load tasks");
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTasks();
+  }, []);
 
   const handleCreate = () => {
     router.push("/create-task/new");
@@ -49,8 +69,9 @@ const TasksPageClient = ({ tasks }: TasksPageClientProps) => {
 
         toast.success("Schedule deleted successfully");
         setDeleteId(null);
-        router.refresh();
+        setTasks((prev) => prev.filter((t) => t.id !== deleteId));
       } catch (error) {
+        console.log("Error", error);
         toast.error("Could not delete schedule");
       }
     });
@@ -58,7 +79,7 @@ const TasksPageClient = ({ tasks }: TasksPageClientProps) => {
 
   return (
     <div className="relative mx-auto w-full max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8 pb-24 pt-8 md:py-8">
-      {/* --- Header Section (Desktop) --- */}
+      {/* --- Header Section --- */}
       <div className="hidden md:flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Schedule Task</h1>
         <Button
@@ -69,8 +90,14 @@ const TasksPageClient = ({ tasks }: TasksPageClientProps) => {
         </Button>
       </div>
 
-      {/* --- Task Grid --- */}
-      {tasks.length === 0 ? (
+      {/* --- Content Logic --- */}
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((id) => (
+            <TaskSettingCardSkeleton key={id} />
+          ))}
+        </div>
+      ) : tasks.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 border-2 border-dashed rounded-3xl bg-muted/5 animate-in fade-in zoom-in duration-500">
           <div className="h-16 w-16 rounded-full bg-muted/20 flex items-center justify-center mb-4">
             <ListTodo className="h-8 w-8 text-muted-foreground/50" />
