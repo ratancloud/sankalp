@@ -1,11 +1,10 @@
-import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { z } from "zod";
-import { headers } from "next/headers";
 import { jsonResponse, errorResponse, handleZodError } from "@/lib/api-utils";
 import { toZonedTime } from "date-fns-tz";
 import { WeekDay } from "@/generated/prisma/enums";
 import { INDIA_TIMEZONE, JS_DAY_TO_PRISMA, toIndiaBucket } from "@/lib/date-utils";
+import { requireUser } from "@/lib/require-user";
 
 
 const createTaskSchema = z
@@ -31,13 +30,7 @@ const createTaskSchema = z
 
 export async function POST(req: Request) {
   try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user?.id) {
-      return errorResponse("Unauthorized", 401);
-    }
+    const user = await requireUser()
 
     const body = await req.json();
     const validated = createTaskSchema.safeParse(body);
@@ -59,7 +52,7 @@ export async function POST(req: Request) {
     const result = await prisma.$transaction(async (tx) => {
       const setting = await tx.taskSetting.create({
         data: {
-          userId: session.user.id,
+          userId: user.id,
           ...data,
         },
       });
@@ -73,7 +66,7 @@ export async function POST(req: Request) {
       if (isActiveToday && isRepeatDay) {
         await tx.task.create({
           data: {
-            userId: session.user.id,
+            userId: user.id,
             taskSettingId: setting.id,
 
             title: data.title,

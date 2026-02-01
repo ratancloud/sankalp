@@ -1,8 +1,7 @@
 import { TaskStatus } from "@/generated/prisma/enums";
-import { errorResponse } from "@/lib/api-utils";
-import { auth } from "@/lib/auth";
+import { errorResponse, jsonResponse } from "@/lib/api-utils";
 import prisma from "@/lib/prisma";
-import { headers } from "next/headers";
+import { requireUser } from "@/lib/require-user";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -19,18 +18,15 @@ export async function PATCH(
   context: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user?.id)
-      return new NextResponse("Unauthorized", { status: 401 });
-
+    const user = await requireUser()
     const { id } = await context.params;
-    const userId = session.user.id;
+    const userId = user.id;
 
     const body = await request.json();
 
     const validation = updateTaskSchema.safeParse(body);
     if (!validation.success) {
-      return new NextResponse("Invalid data", { status: 400 });
+      return errorResponse("Invalid data");
     }
 
     const existingTask = await prisma.task.findUnique({
@@ -38,7 +34,7 @@ export async function PATCH(
     });
 
     if (!existingTask || existingTask.userId !== userId) {
-      return new NextResponse("Unauthorized", { status: 403 });
+      return errorResponse("Unauthorized");
     }
 
     const dataToUpdate = { ...validation.data };
@@ -63,10 +59,10 @@ export async function PATCH(
       data: dataToUpdate,
     });
 
-    return NextResponse.json(updatedTask);
+    return jsonResponse(updatedTask);
   } catch (error) {
     console.error("[TASK_PATCH]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    return errorResponse("Internal Error")
   }
 }
 
@@ -75,20 +71,17 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user?.id) return errorResponse("Unauthorized", 401);
+    const user = await requireUser()
 
     const { id } = await context.params;
-    const userId = session.user.id;
+    const userId = user.id;
 
     const existingTask = await prisma.task.findUnique({
       where: { id: id },
     });
 
-    console.log(existingTask);
-
     if (!existingTask || existingTask.userId !== userId) {
-      return new NextResponse("Unauthorized", { status: 403 });
+      return errorResponse("Unauthorized");
     }
 
     await prisma.task.delete({
@@ -98,7 +91,7 @@ export async function DELETE(
     return NextResponse.json({ message: "Task deleted" });
   } catch (error) {
     console.error("[TASK_DELETE]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    return errorResponse("Internal Error")
   }
 }
 
@@ -107,23 +100,22 @@ export async function GET(
   context: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user?.id) return errorResponse("Unauthorized", 401);
+    const user = await requireUser()
 
     const { id } = await context.params;
-    const userId = session.user.id;
+    const userId = user.id;
 
     const existingTask = await prisma.task.findUnique({
       where: { id: id },
     });
 
     if (!existingTask || existingTask.userId !== userId) {
-      return new NextResponse("Unauthorized", { status: 403 });
+      return errorResponse("Unauthorized")
     }
 
-    return NextResponse.json(existingTask);
+    return jsonResponse(existingTask);
   } catch (error) {
     console.error("[TASK_GET]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    return errorResponse("Internal Error")
   }
 }

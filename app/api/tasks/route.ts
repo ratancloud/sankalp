@@ -1,17 +1,15 @@
-import { headers } from "next/headers";
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
 import { addDays } from "date-fns";
 import { TaskStatus } from "@/generated/prisma/enums";
-import { jsonResponse } from "@/lib/api-utils";
+import { errorResponse, jsonResponse } from "@/lib/api-utils";
 import { VirtualTask } from "@/types/task";
 import {
   toIndiaBucket,
-  getIndiaWeekdayEnum,
   JS_DAY_TO_PRISMA,
 } from "@/lib/date-utils";
 import z from "zod";
+import { requireUser } from "@/lib/require-user";
 
 const createTaskSchema = z.object({
   title: z.string().min(2).max(50),
@@ -25,81 +23,26 @@ const createTaskSchema = z.object({
 const DAYS_AHEAD = 14;
 
 export async function GET(req: NextRequest) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const user = await requireUser()
 
-  if (!session?.user?.id) {
-    return new NextResponse("Unauthorized", { status: 401 });
-  }
-
-  const userId = session.user.id;
+  const userId = user.id;
   const { searchParams } = new URL(req.url);
   const view = searchParams.get("view") || "today";
 
   const nowUtc = new Date();
   const todayDbDate = toIndiaBucket(nowUtc);
-  const todayEnum = getIndiaWeekdayEnum(nowUtc);
 
   try {
     if (view === "today") {
-      const [existingTasks, activeSettings] = await Promise.all([
-        prisma.task.findMany({
-          where: {
-            userId,
-            date: todayDbDate,
-          },
-          orderBy: { scheduledAt: "asc" },
-        }),
-        prisma.taskSetting.findMany({
-          where: {
-            userId,
-            startDate: { lte: todayDbDate },
-            endDate: { gte: todayDbDate },
-            repeatOn: { has: todayEnum },
-          },
-        }),
-      ]);
-
-      const existingSettingIds = new Set(
-        existingTasks
-          .map((t) => t.taskSettingId)
-          .filter((id): id is string => id !== null),
-      );
-
-      const tasksToCreate = [];
-
-      for (const setting of activeSettings) {
-        if (existingSettingIds.has(setting.id)) continue;
-
-        tasksToCreate.push({
+      const tasks = await prisma.task.findMany({
+        where: {
           userId,
-          taskSettingId: setting.id,
-          title: setting.title,
-          description: setting.description,
-          isPrivate: setting.isPrivate,
           date: todayDbDate,
-          scheduledAt: setting.scheduledAt,
-          duration: setting.duration,
-          status: TaskStatus.PENDING,
-        });
-      }
-
-      if (tasksToCreate.length === 0) {
-        return jsonResponse(existingTasks, 200);
-      }
-
-      await prisma.task.createMany({
-        data: tasksToCreate,
-        skipDuplicates: true,
-      });
-
-      const finalTasks = await prisma.task.findMany({
-        where: { userId, date: todayDbDate },
+        },
         orderBy: { scheduledAt: "asc" },
       });
 
-      return jsonResponse(finalTasks, 200);
+      return jsonResponse(tasks, 200);
     }
 
     if (view === "previous") {
@@ -122,13 +65,22 @@ export async function GET(req: NextRequest) {
           endDate: { gt: todayDbDate },
         },
         orderBy: { scheduledAt: "asc" },
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          isPrivate: true,
+          scheduledAt: true,
+          duration: true,
+          repeatOn: true,
+          startDate: true,
+          endDate: true,
+        },
       });
 
       const virtualTasks: VirtualTask[] = [];
 
       for (let i = 1; i <= DAYS_AHEAD; i++) {
-        // Calculate future bucket (e.g. Today + 1 day)
-        // Since todayDbDate is already UTC Midnight, addDays maintains that.
         const futureDate = addDays(todayDbDate, i);
 
         // We can get the weekday from the UTC date directly now
@@ -160,29 +112,23 @@ export async function GET(req: NextRequest) {
       return jsonResponse(virtualTasks, 200);
     }
 
-    return new NextResponse("Invalid view", { status: 400 });
+    return errorResponse("Invalid view");
   } catch (error) {
     console.error("TASK GET ERROR:", error);
-    return new NextResponse("Internal Server Error", { status: 500 });
+    return errorResponse("Internal Server Error");
   }
 }
 
 export async function POST(req: Request) {
   try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user?.id) {
-      return new NextResponse("Unauthorized", { status: 401 });
-    }
+    const user = await requireUser()
 
     const json = await req.json();
     const body = createTaskSchema.parse(json);
 
     const task = await prisma.task.create({
       data: {
-        userId: session.user.id,
+        userId: user.id,
         title: body.title,
         description: body.description,
         isPrivate: body.isPrivate,
@@ -194,13 +140,13 @@ export async function POST(req: Request) {
       },
     });
 
-    return NextResponse.json(task);
+    return jsonResponse(task);
   } catch (error) {
     console.error("[TASKS_POST]", error);
     if (error instanceof z.ZodError) {
-      return new NextResponse(JSON.stringify(error.issues), { status: 422 });
+      return errorResponse(JSON.stringify(error.issues));
     }
 
-    return new NextResponse("Internal Server Error", { status: 500 });
+    return errorResponse("Internal Server Error");
   }
 }

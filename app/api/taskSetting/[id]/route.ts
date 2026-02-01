@@ -1,10 +1,9 @@
-import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { z } from "zod";
-import { headers } from "next/headers";
 import { jsonResponse, errorResponse, handleZodError } from "@/lib/api-utils";
 import { WeekDay } from "@/generated/prisma/enums";
 import { toIndiaBucket } from "@/lib/date-utils";
+import { requireUser } from "@/lib/require-user";
 
 const updateTaskSchema = z
   .object({
@@ -47,12 +46,11 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user?.id) return errorResponse("Unauthorized", 401);
+    const user = await requireUser()
 
     const { id } = await context.params;
 
-    const check = await verifyOwner(id, session.user.id);
+    const check = await verifyOwner(id, user.id);
     if (check === "NOT_FOUND") return errorResponse("Not found", 404);
     if (check === "FORBIDDEN") return errorResponse("Forbidden", 403);
     await prisma.taskSetting.delete({ where: { id: id } });
@@ -69,8 +67,7 @@ export async function PATCH(
   context: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user?.id) return errorResponse("Unauthorized", 401);
+    const user = await requireUser()
 
     const { id } = await context.params;
 
@@ -79,7 +76,7 @@ export async function PATCH(
 
     if (!validated.success) return handleZodError(validated.error);
 
-    const check = await verifyOwner(id, session.user.id);
+    const check = await verifyOwner(id, user.id);
     if (check === "NOT_FOUND") return errorResponse("Not found", 404);
     if (check === "FORBIDDEN") return errorResponse("Forbidden", 403);
 
@@ -100,12 +97,11 @@ export async function GET(
   context: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user?.id) return errorResponse("Unauthorized", 401);
+    const user = await requireUser()
 
     const { id } = await context.params;
 
-    const check = await verifyOwner(id, session.user.id);
+    const check = await verifyOwner(id, user.id);
     if (check === "NOT_FOUND") return errorResponse("Not found", 404);
     if (check === "FORBIDDEN") return errorResponse("Forbidden", 403);
 
