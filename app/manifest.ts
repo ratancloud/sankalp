@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: 'Sankalp',
     description: 'Sankalp is management system',
     lang: 'en',
-    start_url: '/',
+    start_url: '/task',
     scope: '/',
     display: 'standalone',
     background_color: '#FFFFFF',

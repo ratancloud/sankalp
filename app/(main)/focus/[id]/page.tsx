@@ -36,7 +36,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { TaskStatus } from "@/generated/prisma/enums";
-
+import FocusSkeleton from "@/components/skelton/FocusSkeleton";
 
 interface TaskData {
   id: string;
@@ -187,7 +187,6 @@ export default function FocusPage({ params }: { params: { id: string } }) {
     router.back();
   };
 
-  // 1. Open Dialog Handler
   const handleOpenCompleteDialog = () => {
     stopTimer();
     setIsPlaying(false);
@@ -195,7 +194,6 @@ export default function FocusPage({ params }: { params: { id: string } }) {
     setIsCompleteDialogOpen(true);
   };
 
-  // 2. Confirm Completion Handler
   const handleConfirmComplete = async () => {
     const finalSeconds = Math.max(0, parseInt(manualMinutes || "0") * 60);
     setSeconds(finalSeconds);
@@ -213,11 +211,7 @@ export default function FocusPage({ params }: { params: { id: string } }) {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-svh items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <FocusSkeleton />;
   }
 
   return (
@@ -254,7 +248,6 @@ export default function FocusPage({ params }: { params: { id: string } }) {
 
       {/* 2. Main Timer Display */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 relative z-10 space-y-5">
-        {/* Ambient Breathing Glow */}
         <div
           className={cn(
             "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-75 w-75 rounded-full blur-[120px] transition-all duration-3000",
@@ -273,7 +266,6 @@ export default function FocusPage({ params }: { params: { id: string } }) {
           </h1>
         </div>
 
-        {/* Timer Digits */}
         <div className="relative z-10 select-none">
           <span
             className={cn(
@@ -286,7 +278,6 @@ export default function FocusPage({ params }: { params: { id: string } }) {
           </span>
         </div>
 
-        {/* Linear Progress Bar */}
         <div className="w-full max-w-xs relative z-10 space-y-2">
           <div className="flex justify-between items-end px-1">
             <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
@@ -317,7 +308,6 @@ export default function FocusPage({ params }: { params: { id: string } }) {
 
       {/* 3. Controls Footer */}
       <div className="p-6 flex items-center justify-center gap-8 md:gap-12 z-20">
-        {/* Reset (Secondary) */}
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button
@@ -349,7 +339,6 @@ export default function FocusPage({ params }: { params: { id: string } }) {
           </AlertDialogContent>
         </AlertDialog>
 
-        {/* Play/Pause (Primary Hero) */}
         <Button
           onClick={handleTogglePlay}
           disabled={isSyncing}
@@ -369,7 +358,6 @@ export default function FocusPage({ params }: { params: { id: string } }) {
           )}
         </Button>
 
-        {/* Complete (Secondary) */}
         <Button
           onClick={handleOpenCompleteDialog}
           disabled={isSyncing}
@@ -380,7 +368,6 @@ export default function FocusPage({ params }: { params: { id: string } }) {
         </Button>
       </div>
 
-      {/* --- Completion Dialog --- */}
       <Dialog
         open={isCompleteDialogOpen}
         onOpenChange={setIsCompleteDialogOpen}

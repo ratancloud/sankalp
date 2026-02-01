@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
-import { Plus, CalendarDays, Loader2 } from "lucide-react";
+import { Plus, CalendarDays } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -13,6 +13,8 @@ import { Task } from "@/types/task";
 import EmptyState from "@/components/task/EmptyState";
 import { TaskStatus } from "@/generated/prisma/enums";
 import CreateTaskDialog from "@/components/task/CreateTaskDialog";
+import TaskSkeleton from "@/components/skelton/TaskSkeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function TaskPage() {
   const [activeTab, setActiveTab] = useState("today");
@@ -121,8 +123,8 @@ export default function TaskPage() {
       {/* --- Header Section --- */}
       <header className="flex justify-between items-center">
         <div className="space-y-1">
-          <h1 className="text-xl font-bold tracking-tight text-foreground md:text-2xl">
-            Good Morning, Ratan
+          <h1 className="text-xl font-bold tracking-tight text-foreground md:text-2xl inline-flex items-center gap-2">
+            Good Morning, {loading ? <Skeleton className="w-25 h-7 p-2" /> : "Ratan"}
           </h1>
           <p className="flex items-center gap-2 text-sm text-muted-foreground">
             <CalendarDays className="h-4 w-4" />
@@ -202,9 +204,7 @@ export default function TaskPage() {
 
         <div className="min-h-75">
           {loading ? (
-            <div className="flex h-40 w-full items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground/50" />
-            </div>
+            <TaskSkeleton />
           ) : (
             <>
               {/* Tab: HISTORY */}
