@@ -1,6 +1,11 @@
 import prisma from "@/lib/prisma";
 import { z } from "zod";
-import { jsonResponse, errorResponse, handleZodError } from "@/lib/api-utils";
+import {
+  jsonResponseCached,
+  jsonResponseMutation,
+  errorResponse,
+  handleZodError,
+} from "@/lib/api-utils";
 import { toZonedTime } from "date-fns-tz";
 import { WeekDay } from "@/generated/prisma/enums";
 import {
@@ -31,38 +36,48 @@ const createTaskSchema = z
     }
   });
 
+// Columns needed by the create-task UI and upcoming widget
+const TASK_SETTING_SELECT = {
+  id: true,
+  title: true,
+  description: true,
+  isPrivate: true,
+  scheduledAt: true,
+  duration: true,
+  repeatOn: true,
+  startDate: true,
+  endDate: true,
+  userId: true,
+} as const;
+
 export async function POST(req: Request) {
   try {
-    const user = await requireUser();
+    // Parallelize auth with body parsing — both are independent
+    const [user, body] = await Promise.all([
+      requireUser(),
+      req.json(),
+    ]);
 
-    const body = await req.json();
     const validated = createTaskSchema.safeParse(body);
-
     if (!validated.success) {
       return handleZodError(validated.error);
     }
 
     const data = validated.data;
 
-    // 1. Get "Today" in India (UTC Midnight Bucket)
     const nowUtc = new Date();
     const todayDate = toIndiaBucket(nowUtc);
-
-    // 2. Get "Today's Weekday" in India
     const zonedNow = toZonedTime(nowUtc, INDIA_TIMEZONE);
     const todayEnum = JS_DAY_TO_PRISMA[zonedNow.getDay()];
 
     const result = await prisma.$transaction(async (tx) => {
       const setting = await tx.taskSetting.create({
-        data: {
-          userId: user.id,
-          ...data,
-        },
+        data: { userId: user.id, ...data },
+        select: TASK_SETTING_SELECT,
       });
 
       const isActiveToday =
         todayDate >= setting.startDate && todayDate <= setting.endDate;
-
       const isRepeatDay = data.repeatOn.includes(todayEnum);
 
       if (isActiveToday && isRepeatDay) {
@@ -70,16 +85,12 @@ export async function POST(req: Request) {
           data: {
             userId: user.id,
             taskSettingId: setting.id,
-
             title: data.title,
             description: data.description,
             isPrivate: data.isPrivate,
-
             date: todayDate,
-
             scheduledAt: data.scheduledAt,
             duration: data.duration,
-
             status: "PENDING",
           },
         });
@@ -88,7 +99,7 @@ export async function POST(req: Request) {
       return setting;
     });
 
-    return jsonResponse(result, 201);
+    return jsonResponseMutation(result, 201);
   } catch (error) {
     console.error("POST Error:", error);
     return errorResponse("Internal Server Error", 500);
@@ -99,18 +110,17 @@ export async function GET() {
   try {
     const user = await requireUser();
 
-    const tasks = await prisma.taskSetting.findMany({
-      where: {
-        userId: user.id,
-      },
-      orderBy: {
-        scheduledAt: "asc",
-      },
+    const settings = await prisma.taskSetting.findMany({
+      where: { userId: user.id },
+      orderBy: { scheduledAt: "asc" },
+      select: TASK_SETTING_SELECT,
     });
 
-    return jsonResponse(tasks, 200);
+    // Settings rarely change — safe for 30s stale-while-revalidate
+    return jsonResponseCached(settings, 30, 60);
   } catch (error) {
     console.error("GET Error:", error);
     return errorResponse("Internal Server Error", 500);
   }
 }
+

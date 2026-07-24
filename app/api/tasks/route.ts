@@ -2,7 +2,13 @@ import { NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
 import { addDays } from "date-fns";
 import { TaskStatus } from "@/generated/prisma/enums";
-import { errorResponse, jsonResponse } from "@/lib/api-utils";
+import {
+  errorResponse,
+  jsonResponse,
+  jsonResponseCached,
+  jsonResponseMutation,
+  jsonResponseNoCache,
+} from "@/lib/api-utils";
 import { VirtualTask } from "@/types/task";
 import {
   toIndiaBucket,
@@ -22,48 +28,62 @@ const createTaskSchema = z.object({
 
 const DAYS_AHEAD = 14;
 
+// Columns required by TodayTaskList / task board UI
+const TASK_SELECT = {
+  id: true,
+  title: true,
+  description: true,
+  isPrivate: true,
+  date: true,
+  scheduledAt: true,
+  duration: true,
+  actualDuration: true,
+  status: true,
+  taskSettingId: true,
+} as const;
+
 export async function GET(req: NextRequest) {
-  const user = await requireUser()
+  // Parallelize auth check with URL parsing — both are independent
+  const [user, { searchParams }] = await Promise.all([
+    requireUser(),
+    Promise.resolve(new URL(req.url)),
+  ]);
 
   const userId = user.id;
-  const { searchParams } = new URL(req.url);
   const view = searchParams.get("view") || "today";
 
   const nowUtc = new Date();
   const todayDbDate = toIndiaBucket(nowUtc);
 
   try {
+    // ── VIEW: TODAY ──────────────────────────────────────────────────────────
+    // Always fresh — tasks change throughout the day
     if (view === "today") {
       const tasks = await prisma.task.findMany({
-        where: {
-          userId,
-          date: todayDbDate,
-        },
+        where: { userId, date: todayDbDate },
         orderBy: { scheduledAt: "asc" },
+        select: TASK_SELECT,
       });
-
-      return jsonResponse(tasks, 200);
+      return jsonResponseNoCache(tasks);
     }
 
+    // ── VIEW: PREVIOUS ───────────────────────────────────────────────────────
+    // Historical — rarely changes; safe to serve stale for 30s
     if (view === "previous") {
       const history = await prisma.task.findMany({
-        where: {
-          userId,
-          date: { lt: todayDbDate },
-        },
-        orderBy: { scheduledAt: "asc" },
+        where: { userId, date: { lt: todayDbDate } },
+        orderBy: [{ date: "desc" }, { scheduledAt: "asc" }],
         take: 50,
+        select: TASK_SELECT,
       });
-
-      return jsonResponse(history, 200);
+      return jsonResponseCached(history, 30, 60);
     }
 
+    // ── VIEW: UPCOMING ───────────────────────────────────────────────────────
+    // Pure computation from settings — cache for 60s, SWR for 5 min
     if (view === "upcoming") {
       const settings = await prisma.taskSetting.findMany({
-        where: {
-          userId,
-          endDate: { gt: todayDbDate },
-        },
+        where: { userId, endDate: { gt: todayDbDate } },
         orderBy: { scheduledAt: "asc" },
         select: {
           id: true,
@@ -82,14 +102,10 @@ export async function GET(req: NextRequest) {
 
       for (let i = 1; i <= DAYS_AHEAD; i++) {
         const futureDate = addDays(todayDbDate, i);
-
-        // We can get the weekday from the UTC date directly now
         const weekdayEnum = JS_DAY_TO_PRISMA[futureDate.getUTCDay()];
 
         for (const setting of settings) {
           if (!setting.repeatOn.includes(weekdayEnum)) continue;
-
-          // Simple comparison because everything is UTC Midnight
           if (futureDate < setting.startDate) continue;
           if (futureDate > setting.endDate) continue;
 
@@ -109,21 +125,24 @@ export async function GET(req: NextRequest) {
         }
       }
 
-      return jsonResponse(virtualTasks, 200);
+      return jsonResponseCached(virtualTasks, 60, 300);
     }
 
-    return errorResponse("Invalid view");
+    return errorResponse("Invalid view", 400);
   } catch (error) {
     console.error("TASK GET ERROR:", error);
-    return errorResponse("Internal Server Error");
+    return errorResponse("Internal Server Error", 500);
   }
 }
 
 export async function POST(req: Request) {
   try {
-    const user = await requireUser()
+    // Parallelize auth with body parsing — independent async operations
+    const [user, json] = await Promise.all([
+      requireUser(),
+      req.json(),
+    ]);
 
-    const json = await req.json();
     const body = createTaskSchema.parse(json);
 
     const task = await prisma.task.create({
@@ -138,15 +157,15 @@ export async function POST(req: Request) {
         status: "PENDING",
         actualDuration: 0,
       },
+      select: TASK_SELECT,
     });
 
-    return jsonResponse(task);
+    return jsonResponseMutation(task, 201);
   } catch (error) {
     console.error("[TASKS_POST]", error);
     if (error instanceof z.ZodError) {
-      return errorResponse(JSON.stringify(error.issues));
+      return errorResponse(JSON.stringify(error.issues), 400);
     }
-
-    return errorResponse("Internal Server Error");
+    return errorResponse("Internal Server Error", 500);
   }
 }

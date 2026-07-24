@@ -92,16 +92,25 @@ export default async function DashboardPage() {
   const user = await requirePageUser();
   const today = toIndiaBucket(new Date());
 
-  const [todayTasks, allTasks, activeSchedules, recentCompleted, scheduleRows] =
+  const [todayTasks, totalCompleted, activeSchedules, scheduleRows] =
     await Promise.all([
+      // Today's tasks — only columns needed for display + business logic
       prisma.task.findMany({
         where: { userId: user.id, date: today },
         orderBy: { scheduledAt: "asc" },
+        select: {
+          id: true,
+          title: true,
+          status: true,
+          scheduledAt: true,
+          duration: true,
+        },
       }),
-      prisma.task.findMany({
-        where: { userId: user.id },
-        orderBy: { createdAt: "desc" },
+      // Count of all-time completed — single aggregation, no row fetch
+      prisma.task.count({
+        where: { userId: user.id, status: TaskStatus.COMPLETED },
       }),
+      // Count of active schedules today
       prisma.taskSetting.count({
         where: {
           userId: user.id,
@@ -109,13 +118,9 @@ export default async function DashboardPage() {
           endDate: { gte: today },
         },
       }),
-      prisma.task.findMany({
-        where: { userId: user.id, status: TaskStatus.COMPLETED },
-        orderBy: { updatedAt: "desc" },
-        take: 3,
-      }),
+      // Schedule rows for upcoming widget — projected to required fields only
       prisma.taskSetting.findMany({
-        where: { userId: user.id },
+        where: { userId: user.id, endDate: { gt: today } },
         select: {
           id: true,
           title: true,
@@ -128,6 +133,7 @@ export default async function DashboardPage() {
       }),
     ]);
 
+
   const completedToday = todayTasks.filter(
     (task) => task.status === TaskStatus.COMPLETED,
   ).length;
@@ -135,9 +141,7 @@ export default async function DashboardPage() {
     todayTasks.length > 0
       ? Math.round((completedToday / todayTasks.length) * 100)
       : 0;
-  const totalCompleted = allTasks.filter(
-    (task) => task.status === TaskStatus.COMPLETED,
-  ).length;
+  // totalCompleted is now a direct DB count — no JS filter needed
   const pendingToday = todayTasks.filter(
     (task) => task.status === TaskStatus.PENDING,
   ).length;

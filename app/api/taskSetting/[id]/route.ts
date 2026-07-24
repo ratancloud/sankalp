@@ -1,6 +1,12 @@
 import prisma from "@/lib/prisma";
 import { z } from "zod";
-import { jsonResponse, errorResponse, handleZodError } from "@/lib/api-utils";
+import {
+  jsonResponse,
+  jsonResponseMutation,
+  jsonResponseNoCache,
+  errorResponse,
+  handleZodError,
+} from "@/lib/api-utils";
 import { WeekDay } from "@/generated/prisma/enums";
 import { toIndiaBucket } from "@/lib/date-utils";
 import { requireUser } from "@/lib/require-user";
@@ -31,34 +37,30 @@ const updateTaskSchema = z
     }
   });
 
-async function verifyOwner(id: string, userId: string) {
-  const setting = await prisma.taskSetting.findUnique({
-    where: { id },
-    select: { userId: true },
-  });
-  if (!setting) return "NOT_FOUND";
-  if (setting.userId !== userId) return "FORBIDDEN";
-  return "OK";
-}
-
 export async function DELETE(
   req: Request,
   context: { params: Promise<{ id: string }> },
 ) {
   try {
-    const user = await requireUser()
+    // Parallelize auth + params resolution
+    const [user, { id }] = await Promise.all([
+      requireUser(),
+      context.params,
+    ]);
 
-    const { id } = await context.params;
+    // Single query — deleteMany with userId = implicit ownership check
+    const result = await prisma.taskSetting.deleteMany({
+      where: { id, userId: user.id },
+    });
 
-    const check = await verifyOwner(id, user.id);
-    if (check === "NOT_FOUND") return errorResponse("Not found", 404);
-    if (check === "FORBIDDEN") return errorResponse("Forbidden", 403);
-    await prisma.taskSetting.delete({ where: { id: id } });
+    if (result.count === 0) {
+      return errorResponse("Not found or unauthorized", 403);
+    }
 
-    return jsonResponse({ success: true });
+    return jsonResponseMutation({ success: true });
   } catch (error) {
     console.error("DELETE Error:", error);
-    return errorResponse("Internal Server Error");
+    return errorResponse("Internal Server Error", 500);
   }
 }
 
@@ -67,28 +69,32 @@ export async function PATCH(
   context: { params: Promise<{ id: string }> },
 ) {
   try {
-    const user = await requireUser()
+    // Parallelize auth + params + body parsing — all independent
+    const [user, { id }, body] = await Promise.all([
+      requireUser(),
+      context.params,
+      req.json(),
+    ]);
 
-    const { id } = await context.params;
-
-    const body = await req.json();
     const validated = updateTaskSchema.safeParse(body);
-
     if (!validated.success) return handleZodError(validated.error);
 
-    const check = await verifyOwner(id, user.id);
-    if (check === "NOT_FOUND") return errorResponse("Not found", 404);
-    if (check === "FORBIDDEN") return errorResponse("Forbidden", 403);
-
-    const updated = await prisma.taskSetting.update({
-      where: { id: id },
+    // Single query — updateMany with userId = implicit ownership check
+    const result = await prisma.taskSetting.updateMany({
+      where: { id, userId: user.id },
       data: validated.data,
     });
 
-    return jsonResponse(updated);
+    if (result.count === 0) {
+      return errorResponse("Not found or unauthorized", 403);
+    }
+
+    // Fetch updated row to return full data (1 extra query — necessary for response)
+    const updated = await prisma.taskSetting.findUnique({ where: { id } });
+    return jsonResponseMutation(updated);
   } catch (error) {
     console.error("PATCH Error:", error);
-    return errorResponse("Internal Server Error");
+    return errorResponse("Internal Server Error", 500);
   }
 }
 
@@ -97,21 +103,25 @@ export async function GET(
   context: { params: Promise<{ id: string }> },
 ) {
   try {
-    const user = await requireUser()
+    // Parallelize auth + params resolution
+    const [user, { id }] = await Promise.all([
+      requireUser(),
+      context.params,
+    ]);
 
-    const { id } = await context.params;
-
-    const check = await verifyOwner(id, user.id);
-    if (check === "NOT_FOUND") return errorResponse("Not found", 404);
-    if (check === "FORBIDDEN") return errorResponse("Forbidden", 403);
-
+    // Single query with ownership check embedded in where clause
     const taskSetting = await prisma.taskSetting.findUnique({
-      where: { id: id },
+      where: { id, userId: user.id },
     });
 
-    return jsonResponse(taskSetting);
+    if (!taskSetting) {
+      return errorResponse("Not found or unauthorized", 403);
+    }
+
+    return jsonResponseNoCache(taskSetting);
   } catch (error) {
     console.error("GET Error:", error);
-    return errorResponse("Internal Server Error");
+    return errorResponse("Internal Server Error", 500);
   }
 }
+
