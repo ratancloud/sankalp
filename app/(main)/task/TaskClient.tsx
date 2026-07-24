@@ -66,6 +66,7 @@ export default function TaskClient() {
     tasks.length > 0 ? Math.round((completedCount / tasks.length) * 100) : 0;
 
   const handleStatusChange = async (id: string, newStatus: TaskStatus) => {
+    const previousTasks = tasks;
     const updateData = {
       status: newStatus,
       ...(newStatus === "SKIPPED" ? { actualDuration: 0 } : {}),
@@ -87,33 +88,45 @@ export default function TaskClient() {
       toast.success("Task updated");
     } catch (e) {
       console.log("Error on Update Status: ", e);
+      setTasks(previousTasks);
       toast.error("Failed to update status");
     }
   };
 
   const handleUpdateData = async (id: string, data: any) => {
+    const previousTasks = tasks;
     // 1. Optimistic Update (Crucial for timer smoothness)
     setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, ...data } : t)));
 
     // 2. API Call (Debounce this in production if calling frequently)
     try {
-      await fetch(`/api/tasks/${id}`, {
+      const response = await fetch(`/api/tasks/${id}`, {
         method: "PATCH",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
+
+      if (!response.ok) throw new Error("Failed to update task");
     } catch (e) {
       console.error(e);
+      setTasks(previousTasks);
+      toast.error("Failed to update task");
     }
   };
 
   const handleDelete = async (id: string) => {
+    const previousTasks = tasks;
     setTasks((prev) => prev.filter((t) => t.id !== id));
 
     try {
-      await fetch(`/api/tasks/${id}`, { method: "DELETE" });
+      const response = await fetch(`/api/tasks/${id}`, { method: "DELETE" });
+
+      if (!response.ok) throw new Error("Failed to delete task");
+
       toast.success("Task deleted");
     } catch (e) {
       console.log("Task Delete Error", e);
+      setTasks(previousTasks);
       toast.error("Failed to delete task");
     }
   };

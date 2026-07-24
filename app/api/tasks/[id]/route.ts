@@ -42,12 +42,12 @@ export async function PATCH(
       dataToUpdate.actualDuration ?? existingTask.actualDuration;
     const finalPlannedDuration = dataToUpdate.duration ?? existingTask.duration;
 
-    if (finalActualDuration === 0) {
-      dataToUpdate.status = "PENDING";
-    }
-
-    if (finalActualDuration > finalPlannedDuration) {
-      dataToUpdate.status = "COMPLETED";
+    if (!("status" in dataToUpdate)) {
+      if (finalActualDuration === 0) {
+        dataToUpdate.status = "PENDING";
+      } else if (finalActualDuration >= finalPlannedDuration) {
+        dataToUpdate.status = "COMPLETED";
+      }
     }
 
     if (dataToUpdate.status === "SKIPPED") {

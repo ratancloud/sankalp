@@ -108,7 +108,7 @@ export async function GET() {
       },
     });
 
-    return jsonResponse(tasks, 201);
+    return jsonResponse(tasks, 200);
   } catch (error) {
     console.error("GET Error:", error);
     return errorResponse("Internal Server Error", 500);
