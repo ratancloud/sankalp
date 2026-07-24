@@ -41,9 +41,8 @@ export function PastTaskCard({ task }: { task: Task }) {
   return (
     <div className={cn(
       "group flex flex-col sm:flex-row sm:items-center gap-3 py-3 px-4 border-b last:border-0 hover:bg-muted/40 transition-colors",
-      // Subtle background tint for missed/overtime items to draw attention
-      isMissed && "bg-red-50/40 dark:bg-red-900/10",
-      isOvertime && "bg-orange-50/40 dark:bg-orange-900/10"
+      isMissed && "bg-red-500/5 dark:bg-red-500/8",
+      isOvertime && "bg-amber-500/5 dark:bg-amber-500/8"
     )}>
       
       {/* 1. Time (Fixed Width on Desktop) */}
@@ -105,8 +104,8 @@ export function PastTaskCard({ task }: { task: Task }) {
            <Timer className="w-3.5 h-3.5 text-muted-foreground" />
            <span className={cn(
              "text-xs font-mono font-medium",
-             isOvertime ? "text-orange-600 dark:text-orange-500" : 
-             isMissed ? "text-red-500" : "text-foreground"
+             isOvertime ? "text-amber-600 dark:text-amber-400" : 
+             isMissed ? "text-red-500 dark:text-red-400" : "text-foreground"
            )}>
              {task.actualDuration > 0 ? formatDuration(task.actualDuration) : "--"}
            </span>
@@ -115,7 +114,7 @@ export function PastTaskCard({ task }: { task: Task }) {
         {/* Planned Time / Overtime Badge */}
         <div className="flex items-center gap-1.5">
            {isOvertime ? (
-             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
+             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400">
                <AlertTriangle className="w-3 h-3" />
                +{formatDuration(timeDiff)}
              </span>

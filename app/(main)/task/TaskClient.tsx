@@ -200,14 +200,14 @@ export default function TaskClient() {
         className="space-y-4"
       >
         {/* Sticky Tabs Header */}
-        <div className="sticky top-20 z-30 rounded-full border bg-background/80 p-1 shadow-sm backdrop-blur-md md:static md:rounded-lg md:bg-muted/50 md:backdrop-blur-none">
+        <div className="sticky top-20 z-30 rounded-full border border-border/60 bg-background/90 p-1 shadow-sm backdrop-blur-md md:static md:rounded-xl md:bg-muted/40 md:backdrop-blur-none">
           <TabsList className="grid w-full grid-cols-3 bg-transparent">
             {["previous", "today", "upcoming"].map((tab) => (
               <TabsTrigger
                 key={tab}
                 value={tab}
                 disabled={loading}
-                className="rounded-full capitalize data-[state=active]:bg-muted md:data-[state=active]:bg-background md:data-[state=active]:shadow-sm"
+                className="rounded-full capitalize data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=active]:shadow-none md:data-[state=active]:bg-primary/10"
               >
                 {tab}
               </TabsTrigger>

@@ -215,7 +215,15 @@ export default function FocusPage({ params }: { params: { id: string } }) {
   }
 
   return (
-    <div className="relative mx-auto w-full max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8 pb-24 pt-8 md:py-8">
+    <div className="relative mx-auto w-full max-w-7xl min-h-[calc(100vh-5rem)] space-y-6 px-4 sm:px-6 lg:px-8 pb-24 pt-8 md:py-8">
+      {/* Ambient background for immersive focus mode */}
+      <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0">
+        <div className={cn(
+          "absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full blur-[140px] transition-all duration-3000",
+          isPlaying ? "bg-primary/10 scale-110" : "bg-primary/5 scale-90",
+          isOvertime && "bg-destructive/10",
+        )} />
+      </div>
       {/* 1. Header Area */}
       <div className="space-y-5">
         <Button
@@ -362,7 +370,7 @@ export default function FocusPage({ params }: { params: { id: string } }) {
           onClick={handleOpenCompleteDialog}
           disabled={isSyncing}
           size="icon"
-          className="h-14 w-14 rounded-full bg-green-500/10 text-green-600 border border-green-500/20 hover:bg-green-500/20 transition-all active:scale-95"
+          className="h-14 w-14 rounded-full bg-accent text-accent-foreground border border-accent-foreground/20 hover:bg-accent/80 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/25 dark:hover:bg-emerald-500/25 transition-all active:scale-95"
         >
           <CheckCircle2 className="h-7 w-7" />
         </Button>
@@ -374,8 +382,8 @@ export default function FocusPage({ params }: { params: { id: string } }) {
       >
         <DialogContent className="max-w-85 rounded-4xl p-6 border-none shadow-2xl bg-card">
           <DialogHeader className="items-center text-center space-y-4">
-            <div className="h-16 w-16 rounded-full bg-green-500/10 flex items-center justify-center">
-              <CheckCircle2 className="h-8 w-8 text-green-600" />
+            <div className="h-16 w-16 rounded-full bg-accent dark:bg-emerald-500/15 flex items-center justify-center">
+            <CheckCircle2 className="h-8 w-8 text-accent-foreground dark:text-emerald-400" />
             </div>
             <div>
               <DialogTitle className="text-xl font-black tracking-tight">

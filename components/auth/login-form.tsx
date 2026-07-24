@@ -78,7 +78,7 @@ export default function LoginForm() {
   }
 
   return (
-    <Card className="w-full max-w-md border-border/50 shadow-xl bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
+    <Card className="w-full max-w-md border-border/80 shadow-2xl shadow-primary/10 bg-card/90 backdrop-blur-md ring-1 ring-white/5 dark:ring-white/5">
       <CardHeader className="space-y-1 text-center">
         {/* Brand Logo - Matching Navbar Style */}
         <div className="flex justify-center mb-4">
@@ -177,7 +177,7 @@ export default function LoginForm() {
         </Form>
       </CardContent>
 
-      <CardFooter className="flex justify-center border-t bg-muted/20 py-4">
+      <CardFooter className="flex justify-center border-t border-border/60 bg-muted/40 py-4">
         <p className="text-sm text-muted-foreground">
           Don&apos;t have an account?{" "}
           <Link href="/signup" className="text-primary font-medium hover:underline underline-offset-4">

@@ -26,7 +26,7 @@ export default function NavbarLayout({ user }: NavbarLayoutProps) {
   return (
     <>
       {/* Desktop Header */}
-      <header className="flex max-w-7xl mx-auto sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-md px-4 md:px-8 h-16 items-center justify-between">
+      <header className="flex max-w-7xl mx-auto sticky top-0 z-50 w-full border-b border-border/60 bg-background/85 backdrop-blur-md px-4 md:px-8 h-16 items-center justify-between">
         <Logo />
 
         <nav className="hidden md:flex items-center gap-1">
@@ -35,10 +35,10 @@ export default function NavbarLayout({ user }: NavbarLayoutProps) {
               key={link.href}
               href={link.href}
               className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all",
+                "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200",
                 isActive(link.href)
-                  ? "bg-primary/10 text-primary hover:bg-primary/20"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  ? "bg-primary/10 text-primary hover:bg-primary/15"
+                  : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
               )}
             >
               {link.name}
@@ -85,7 +85,7 @@ export default function NavbarLayout({ user }: NavbarLayoutProps) {
                     "flex items-center justify-center rounded-full py-1 mb-1 transition-all duration-300 ease-out",
                     active
                       ? "w-16 bg-primary/15 text-primary"
-                      : "w-12 bg-transparent text-muted-foreground group-hover:bg-muted/50"
+                      : "w-12 bg-transparent text-muted-foreground group-hover:bg-muted/60"
                   )}
                 >
                   <Icon

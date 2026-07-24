@@ -85,7 +85,7 @@ export default function SignUpForm() {
   }
 
   return (
-    <Card className="w-full max-w-md border-muted/40 shadow-xl">
+    <Card className="w-full max-w-md border-border/80 shadow-2xl shadow-primary/10 bg-card/90 backdrop-blur-md ring-1 ring-white/5 dark:ring-white/5">
       <CardHeader className="space-y-1 text-center">
         {/* Brand Logo */}
         <div className="flex justify-center mb-4">
@@ -236,7 +236,7 @@ export default function SignUpForm() {
         </Form>
       </CardContent>
 
-      <CardFooter className="flex justify-center">
+      <CardFooter className="flex justify-center border-t border-border/60 bg-muted/40 py-4">
         <p className="text-sm text-muted-foreground">
           Already have an account?{" "}
           <Link href="/login" className="text-primary font-medium hover:underline">

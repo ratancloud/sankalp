@@ -20,8 +20,8 @@ export default function HomePage() {
       <section className="relative pt-20 pb-20 md:pt-32 md:pb-32 overflow-hidden">
         {/* Background Effects */}
         <div aria-hidden="true" className="absolute inset-0 z-0">
-          <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] bg-size-[16px_16px] mask-[radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)] dark:bg-[radial-gradient(#1e293b_1px,transparent_1px)] opacity-50" />
-          <div className="absolute top-0 z-0 h-screen w-screen bg-[radial-gradient(ellipse_60%_50%_at_50%_0%,rgba(120,119,198,0.15),transparent)] dark:bg-[radial-gradient(ellipse_60%_50%_at_50%_0%,rgba(120,119,198,0.3),transparent)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(#ddd7f7_1px,transparent_1px)] bg-size-[16px_16px] mask-[radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)] dark:bg-[radial-gradient(#1e1535_1px,transparent_1px)] opacity-50" />
+          <div className="absolute top-0 z-0 h-screen w-screen bg-[radial-gradient(ellipse_60%_50%_at_50%_0%,oklch(0.44_0.22_275/0.12),transparent)] dark:bg-[radial-gradient(ellipse_60%_50%_at_50%_0%,oklch(0.68_0.20_278/0.25),transparent)]" />
         </div>
 
         <div className="container relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
@@ -34,7 +34,7 @@ export default function HomePage() {
           {/* Main Headline */}
           <h1 className="mb-6 text-5xl font-extrabold tracking-tight md:text-7xl lg:text-8xl">
             Reclaim your time. <br className="hidden md:block" />
-            <span className="bg-linear-to-r from-sky-500 via-primary to-indigo-500 bg-clip-text text-transparent drop-shadow-sm">
+            <span className="bg-linear-to-r from-sky-500 via-violet-500 to-indigo-500 bg-clip-text text-transparent drop-shadow-sm">
               Conquer your day.
             </span>
           </h1>
@@ -74,10 +74,10 @@ export default function HomePage() {
       {/* ==================== SOCIAL PROOF ==================== */}
       <section className="py-12 border-y bg-muted/20">
         <div className="container mx-auto px-4 text-center">
-          <p className="text-sm font-medium text-muted-foreground mb-8 uppercase tracking-widest">
+          <p className="text-sm font-semibold text-muted-foreground mb-8 uppercase tracking-widest">
             Trusted by productive teams everywhere
           </p>
-          <div className="flex flex-wrap justify-center gap-8 md:gap-16 grayscale opacity-60">
+          <div className="flex flex-wrap justify-center gap-8 md:gap-16 grayscale opacity-75">
              {/* Simple Text Placeholders for Logos (Replace with SVGs if you have them) */}
              <span className="text-xl font-bold flex items-center gap-2"><Globe className="h-5 w-5" /> Acme Corp</span>
              <span className="text-xl font-bold flex items-center gap-2"><Zap className="h-5 w-5" /> BoltShift</span>
@@ -103,7 +103,7 @@ export default function HomePage() {
             {/* Feature 1 */}
             <Card className="md:col-span-2 bg-linear-to-br from-background to-muted/20 border-border/50 transition-all hover:-translate-y-1 hover:shadow-lg">
               <CardContent className="p-8">
-                <div className="h-12 w-12 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 mb-6">
+                <div className="h-12 w-12 rounded-lg bg-blue-500/10 dark:bg-blue-500/15 flex items-center justify-center text-blue-600 dark:text-blue-400 mb-6">
                   <BarChart3 className="h-6 w-6" />
                 </div>
                 <h3 className="text-2xl font-bold mb-3">Real-time Analytics</h3>
@@ -122,7 +122,7 @@ export default function HomePage() {
             {/* Feature 2 */}
             <Card className="bg-linear-to-r from-background to-muted/20 border-border/50 transition-all hover:-translate-y-1 hover:shadow-lg">
               <CardContent className="p-8 flex flex-col h-full">
-                <div className="h-12 w-12 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 mb-6">
+                <div className="h-12 w-12 rounded-lg bg-emerald-500/10 dark:bg-emerald-500/15 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-6">
                   <Zap className="h-6 w-6" />
                 </div>
                 <h3 className="text-xl font-bold mb-3">Lightning Fast</h3>
@@ -135,7 +135,7 @@ export default function HomePage() {
             {/* Feature 3 */}
             <Card className="bg-linear-to-br from-background to-muted/20 border-border/50 transition-all hover:-translate-y-1 hover:shadow-lg">
               <CardContent className="p-8 flex flex-col h-full">
-                <div className="h-12 w-12 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 mb-6">
+                <div className="h-12 w-12 rounded-lg bg-violet-500/10 dark:bg-violet-500/15 flex items-center justify-center text-violet-600 dark:text-violet-400 mb-6">
                   <ShieldCheck className="h-6 w-6" />
                 </div>
                 <h3 className="text-xl font-bold mb-3">Enterprise Secure</h3>
@@ -150,7 +150,7 @@ export default function HomePage() {
               <CardContent className="p-8">
                  <div className="flex flex-col md:flex-row gap-8 items-center">
                     <div className="flex-1">
-                      <div className="h-12 w-12 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-600 mb-6">
+                      <div className="h-12 w-12 rounded-lg bg-orange-500/10 dark:bg-orange-500/15 flex items-center justify-center text-orange-600 dark:text-orange-400 mb-6">
                         <Smartphone className="h-6 w-6" />
                       </div>
                       <h3 className="text-2xl font-bold mb-3">Mobile First Design</h3>

@@ -110,9 +110,9 @@ export function TodayTaskCard({
           "group relative flex w-full flex-col overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm transition-all duration-300 cursor-pointer",
           "hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5",
           // Conditional Styles based on Status
-          isCompleted && "bg-muted/30 opacity-80",
+          isCompleted && "bg-muted/30 opacity-75",
           isInProgress &&
-            "border-amber-500/30 bg-amber-50/10 dark:bg-amber-900/10 shadow-lg shadow-amber-500/5",
+            "border-amber-500/30 bg-amber-500/5 dark:bg-amber-500/8 shadow-md shadow-amber-500/5",
         )}
       >
         {/* Progress Strip (Top) */}
@@ -140,11 +140,11 @@ export function TodayTaskCard({
                   <CheckCircle2 className="h-5 w-5" />
                 </div>
               ) : isInProgress ? (
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 border border-amber-500/20 animate-pulse">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 dark:border-amber-500/30 animate-pulse">
                   <CircleDashed className="h-5 w-5" />
                 </div>
               ) : isSkipped ? (
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-500/10 text-gray-600 border border-gray-500/20">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted/50 text-muted-foreground border border-border/50">
                   <SkipForward className="h-5 w-5" />
                 </div>
               ) : (
@@ -173,16 +173,16 @@ export function TodayTaskCard({
                     className={cn(
                       "h-5 text-[9px] font-bold uppercase tracking-wider px-1.5 rounded-md",
                       isCompleted &&
-                        "bg-green-500/10 text-green-600 hover:bg-green-500/20",
+                        "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20",
                       isSkipped && "bg-muted text-muted-foreground",
                       isInProgress &&
-                        "bg-amber-500/10 text-amber-600 border border-amber-500/20",
+                        "bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20",
                     )}
                   >
                     {task.status.replace("_", " ")}
                   </Badge>
 
-                  <span className="flex items-center gap-1 text-xs font-medium text-foreground bg-primary/40 px-1.5 py-0.5 rounded-md">
+                  <span className="flex items-center gap-1 text-xs font-medium text-primary bg-primary/12 px-1.5 py-0.5 rounded-md">
                     <Clock className="h-3 w-3" />
                     {formattedTime}
                   </span>
@@ -233,9 +233,9 @@ export function TodayTaskCard({
                 className={cn(
                   "text-sm font-black mt-0.5",
                   isCompleted
-                    ? "text-green-600"
+                    ? "text-emerald-600 dark:text-emerald-400"
                     : isOvertime
-                      ? "text-amber-600"
+                      ? "text-amber-600 dark:text-amber-400"
                       : "text-primary",
                 )}
               >

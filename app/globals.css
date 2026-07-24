@@ -65,7 +65,7 @@
   --sidebar-ring: oklch(0.4400 0.2200 275.0000);
 
   /* Typography */
-  --font-sans: Outfit, sans-serif;
+  --font-sans: var(--font-outfit, Outfit, sans-serif);
   --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
   --font-mono: monospace;
 
@@ -147,7 +147,7 @@
   --sidebar-ring: oklch(0.6800 0.2000 278.0000);
 
   /* Typography */
-  --font-sans: Outfit, sans-serif;
+  --font-sans: var(--font-outfit, Outfit, sans-serif);
   --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
   --font-mono: monospace;
 

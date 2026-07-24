@@ -75,8 +75,8 @@ export default function ProfileClient() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         
         {/* 2. Password & Security */}
-        <Card className="rounded-xl border border-border/50 shadow-sm">
-          <CardHeader className="border-b border-border/50 bg-muted/20 pb-4">
+        <Card className="rounded-xl border border-border/70 shadow-sm">
+          <CardHeader className="border-b border-border/70 bg-muted/40 pb-4">
             <div className="flex items-center gap-2">
               <ShieldCheck className="h-5 w-5 text-primary" />
               <CardTitle className="text-base font-semibold">Security</CardTitle>
@@ -123,7 +123,7 @@ export default function ProfileClient() {
               </div>
             </CardContent>
 
-            <CardFooter className="border-t border-border/50 bg-muted/20 py-3 flex justify-end">
+            <CardFooter className="border-t border-border/70 bg-muted/40 py-3 flex justify-end">
               <Button type="submit" size="sm" disabled={isUpdatingPassword}>
                 {isUpdatingPassword && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Update Password

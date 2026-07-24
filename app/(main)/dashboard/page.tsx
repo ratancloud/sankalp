@@ -149,9 +149,10 @@ export default async function DashboardPage() {
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-8 px-4 pb-24 pt-8 sm:px-6 lg:px-8 md:py-8">
-      <section className="relative overflow-hidden rounded-3xl border bg-linear-to-br from-background via-background to-primary/5 p-6 shadow-sm md:p-8">
-        <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-primary/10 blur-3xl" />
-        <div className="absolute bottom-0 left-0 h-32 w-32 rounded-full bg-emerald-500/10 blur-3xl" />
+      <section className="relative overflow-hidden rounded-3xl border border-border/60 bg-linear-to-br from-background via-background to-primary/5 p-6 shadow-sm md:p-8">
+        <div className="absolute right-0 top-0 h-48 w-48 rounded-full bg-primary/15 blur-3xl" />
+        <div className="absolute bottom-0 left-0 h-40 w-40 rounded-full bg-accent-foreground/10 blur-3xl" />
+        <div className="absolute top-1/2 right-1/4 h-32 w-32 rounded-full bg-primary/8 blur-2xl" />
 
         <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="space-y-4">
@@ -204,7 +205,7 @@ export default async function DashboardPage() {
       </section>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Card className="border-border/60">
+        <Card className="border-border/60 border-l-4 border-l-primary/50 transition-all hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/5">
           <CardHeader className="pb-3">
             <CardDescription>Today&apos;s tasks</CardDescription>
             <CardTitle className="text-3xl">{todayTasks.length}</CardTitle>
@@ -217,7 +218,7 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-border/60">
+        <Card className="border-border/60 border-l-4 border-l-emerald-500/50 transition-all hover:-translate-y-0.5 hover:shadow-md hover:shadow-emerald-500/5">
           <CardHeader className="pb-3">
             <CardDescription>Completion rate</CardDescription>
             <CardTitle className="text-3xl">{progressValue}%</CardTitle>
@@ -230,7 +231,7 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-border/60">
+        <Card className="border-border/60 border-l-4 border-l-violet-500/50 transition-all hover:-translate-y-0.5 hover:shadow-md hover:shadow-violet-500/5">
           <CardHeader className="pb-3">
             <CardDescription>Active schedules</CardDescription>
             <CardTitle className="text-3xl">{activeSchedules}</CardTitle>
@@ -243,7 +244,7 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-border/60">
+        <Card className="border-border/60 border-l-4 border-l-amber-500/50 transition-all hover:-translate-y-0.5 hover:shadow-md hover:shadow-amber-500/5">
           <CardHeader className="pb-3">
             <CardDescription>Next focus block</CardDescription>
             <CardTitle className="text-3xl">
@@ -274,7 +275,7 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent className="space-y-3 pt-6">
             {todayTasks.length === 0 ? (
-              <div className="rounded-2xl border border-dashed bg-muted/20 p-8 text-center">
+              <div className="rounded-2xl border-2 border-dashed border-border/60 bg-muted/20 p-8 text-center">
                 <CheckCircle2 className="mx-auto h-10 w-10 text-muted-foreground" />
                 <h3 className="mt-4 text-lg font-semibold">No tasks for today</h3>
                 <p className="mt-2 text-sm text-muted-foreground">
