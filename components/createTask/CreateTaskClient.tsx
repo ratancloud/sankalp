@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useEffect, useState, useTransition } from "react";
+import React, { useState, useTransition } from "react";
+import useSWR from "swr";
+import { fetcher } from "@/lib/fetcher";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Plus, ListTodo, Loader2 } from "lucide-react";
@@ -24,29 +26,7 @@ const TasksPageClient = () => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  // State management
-  const [tasks, setTasks] = useState<TaskSetting[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Fetch tasks on mount
-  const fetchTasks = async () => {
-    try {
-      setIsLoading(true);
-      const response = await fetch("/api/taskSetting");
-      if (!response.ok) throw new Error("Failed to fetch tasks");
-      const data = await response.json();
-      setTasks(data);
-    } catch (error) {
-      toast.error("Could not load tasks");
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchTasks();
-  }, []);
+  const { data: tasks = [], isLoading, mutate } = useSWR<TaskSetting[]>("/api/taskSetting", fetcher);
 
   const handleCreate = () => {
     router.push("/create-task/new");
@@ -61,18 +41,27 @@ const TasksPageClient = () => {
 
     startTransition(async () => {
       try {
+        // Optimistic delete
+        mutate(
+          tasks.filter((t) => t.id !== deleteId),
+          false
+        );
+
         const response = await fetch(`/api/taskSetting/${deleteId}`, {
           method: "DELETE",
         });
 
-        if (!response.ok) throw new Error("Failed to delete");
+        if (!response.ok) {
+          mutate(); // Rollback
+          throw new Error("Failed to delete");
+        }
 
+        mutate(); // Sync
         toast.success("Schedule deleted successfully");
-        setDeleteId(null);
-        setTasks((prev) => prev.filter((t) => t.id !== deleteId));
       } catch (error) {
-        console.log("Error", error);
-        toast.error("Could not delete schedule");
+        toast.error("Failed to delete schedule");
+      } finally {
+        setDeleteId(null);
       }
     });
   };

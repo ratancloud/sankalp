@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import useSWR from "swr";
 import { authClient } from "@/lib/auth-client";
 import { Loader2, LogOut, Laptop, Smartphone, Globe } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -16,33 +17,34 @@ interface ActiveSessionsCardProps {
 }
 
 export default function ActiveSessionsCard({ currentSessionId }: ActiveSessionsCardProps) {
-  const [sessions, setSessions] = useState<Session[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: sessions = [], isLoading: loading, mutate } = useSWR<Session[]>(
+    "sessions",
+    async () => {
+      const res = await authClient.listSessions();
+      return res.data || [];
+    }
+  );
   const [revokingId, setRevokingId] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchSessions = async () => {
-      try {
-        const res = await authClient.listSessions();
-        if (res.data) setSessions(res.data);
-      } catch {
-        toast.error("Failed to load sessions");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchSessions();
-  }, []);
 
   const revokeSession = async (token: string, id: string) => {
     setRevokingId(id);
+    
+    // Optimistic Update
+    mutate(
+      sessions.filter((s) => s.id !== id),
+      false
+    );
+
     const { error } = await authClient.revokeSession({ token });
     setRevokingId(null);
 
-    if (error) return toast.error(error.message || "Failed to revoke");
+    if (error) {
+      mutate(); // Rollback
+      return toast.error(error.message || "Failed to revoke");
+    }
 
+    mutate(); // Sync
     toast.success("Session revoked");
-    setSessions((prev) => prev.filter((s) => s.id !== id));
   };
 
   return (

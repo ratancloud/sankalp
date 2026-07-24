@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import useSWR from "swr";
 import { format } from "date-fns";
+import { fetcher } from "@/lib/fetcher";
 import { Plus, CalendarDays } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -19,43 +21,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function TaskClient() {
   const [activeTab, setActiveTab] = useState("today");
   const [openCreateTask, setOpenCreateTask] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const onRefresh = () => {
-    setRefreshKey((prev) => prev + 1);
-  };
-
-  useEffect(() => {
-    let ignore = false;
-
-    async function fetchTasks() {
-      setLoading(true);
-      try {
-        const res = await fetch(`/api/tasks?view=${activeTab}`);
-
-        if (!res.ok) throw new Error("Failed to fetch");
-
-        const data = await res.json();
-
-        if (!ignore) {
-          setTasks(data || []);
-        }
-      } catch (error) {
-        console.error(error);
-        toast.error("Failed to load tasks");
-      } finally {
-        if (!ignore) setLoading(false);
-      }
-    }
-
-    fetchTasks();
-
-    return () => {
-      ignore = true;
-    };
-  }, [activeTab, refreshKey]);
+  const { data: tasks = [], error, isLoading, mutate } = useSWR<Task[]>(
+    `/api/tasks?view=${activeTab}`,
+    fetcher
+  );
 
   const completedCount =
     activeTab === "today"
@@ -66,14 +35,15 @@ export default function TaskClient() {
     tasks.length > 0 ? Math.round((completedCount / tasks.length) * 100) : 0;
 
   const handleStatusChange = async (id: string, newStatus: TaskStatus) => {
-    const previousTasks = tasks;
     const updateData = {
       status: newStatus,
       ...(newStatus === "SKIPPED" ? { actualDuration: 0 } : {}),
     };
 
-    setTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, ...updateData } : t)),
+    // Optimistic SWR mutation
+    mutate(
+      tasks.map((t) => (t.id === id ? { ...t, ...updateData } : t)),
+      false
     );
 
     try {
@@ -85,18 +55,21 @@ export default function TaskClient() {
 
       if (!response.ok) throw new Error("Failed to update");
 
+      mutate(); // Revalidate with server truth on success
       toast.success("Task updated");
     } catch (e) {
       console.log("Error on Update Status: ", e);
-      setTasks(previousTasks);
+      mutate(); // Rollback on error
       toast.error("Failed to update status");
     }
   };
 
   const handleUpdateData = async (id: string, data: any) => {
-    const previousTasks = tasks;
-    // 1. Optimistic Update (Crucial for timer smoothness)
-    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, ...data } : t)));
+    // Optimistic Update
+    mutate(
+      tasks.map((t) => (t.id === id ? { ...t, ...data } : t)),
+      false
+    );
 
     // 2. API Call (Debounce this in production if calling frequently)
     try {
@@ -107,26 +80,31 @@ export default function TaskClient() {
       });
 
       if (!response.ok) throw new Error("Failed to update task");
+      mutate(); // Sync with server truth
     } catch (e) {
       console.error(e);
-      setTasks(previousTasks);
+      mutate(); // Rollback
       toast.error("Failed to update task");
     }
   };
 
   const handleDelete = async (id: string) => {
-    const previousTasks = tasks;
-    setTasks((prev) => prev.filter((t) => t.id !== id));
+    // Optimistic Delete
+    mutate(
+      tasks.filter((t) => t.id !== id),
+      false
+    );
 
     try {
       const response = await fetch(`/api/tasks/${id}`, { method: "DELETE" });
 
       if (!response.ok) throw new Error("Failed to delete task");
 
+      mutate(); // Revalidate
       toast.success("Task deleted");
     } catch (e) {
       console.log("Task Delete Error", e);
-      setTasks(previousTasks);
+      mutate(); // Rollback
       toast.error("Failed to delete task");
     }
   };
@@ -137,7 +115,7 @@ export default function TaskClient() {
       <header className="flex justify-between items-center">
         <div className="space-y-1">
           <h1 className="text-xl font-bold tracking-tight text-foreground md:text-2xl inline-flex items-center gap-2">
-            Good Morning, {loading ? <Skeleton className="w-25 h-7 p-2" /> : "Ratan"}
+            Good Morning, {isLoading ? <Skeleton className="w-25 h-7 p-2" /> : "Ratan"}
           </h1>
           <p className="flex items-center gap-2 text-sm text-muted-foreground">
             <CalendarDays className="h-4 w-4" />
@@ -145,7 +123,7 @@ export default function TaskClient() {
           </p>
         </div>
 
-        {activeTab === "today" && !loading && (
+        {activeTab === "today" && !isLoading && (
           <div className="hidden md:block">
             <Button
               onClick={() => setOpenCreateTask(true)}
@@ -159,7 +137,7 @@ export default function TaskClient() {
 
       {/* Mobile Progress Bar (Only show on Today tab) */}
       <div className="md:hidden">
-        {activeTab === "today" && !loading && (
+        {activeTab === "today" && !isLoading && (
           <div className="mt-4 flex items-center gap-3 rounded-lg border bg-background p-3 shadow-sm">
             <div className="relative h-10 w-10 shrink-0">
               <svg className="h-full w-full -rotate-90" viewBox="0 0 36 36">
@@ -206,7 +184,7 @@ export default function TaskClient() {
               <TabsTrigger
                 key={tab}
                 value={tab}
-                disabled={loading}
+                disabled={isLoading}
                 className="rounded-full capitalize data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=active]:shadow-none md:data-[state=active]:bg-primary/10"
               >
                 {tab}
@@ -216,7 +194,7 @@ export default function TaskClient() {
         </div>
 
         <div className="min-h-75">
-          {loading ? (
+          {isLoading && !tasks.length ? (
             <TaskSkeleton />
           ) : (
             <>
@@ -263,7 +241,7 @@ export default function TaskClient() {
       </Tabs>
 
       {/* Mobile FAB */}
-      {activeTab === "today" && !loading && (
+      {activeTab === "today" && !isLoading && (
         <div className="fixed bottom-24 right-4 z-50 md:hidden">
           <Button
             onClick={() => setOpenCreateTask(true)}
@@ -279,7 +257,7 @@ export default function TaskClient() {
       <CreateTaskDialog
         openCreateTask={openCreateTask}
         setOpenCreateTask={setOpenCreateTask}
-        onRefresh={onRefresh}
+        onRefresh={() => mutate()}
       />
     </div>
   );

@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
+import useSWR from "swr";
+import { fetcher } from "@/lib/fetcher";
 import { useRouter, useParams } from "next/navigation";
 import TaskForm, { TaskSetting } from "@/components/createTask/TaskForm";
 import { Button } from "@/components/ui/button";
@@ -12,39 +14,12 @@ export default function EditTaskPage() {
   const params = useParams();
   const taskId = params.taskId as string;
 
-  const [task, setTask] = useState<TaskSetting | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const { data: task, error, isLoading } = useSWR<TaskSetting>(
+    taskId ? `/api/taskSetting/${taskId}` : null,
+    fetcher
+  );
 
-  useEffect(() => {
-    const fetchTask = async () => {
-      try {
-        setIsLoading(true);
-        const response = await fetch(`/api/taskSetting/${taskId}`);
-
-        if (response.status === 404) {
-          setError(true);
-          toast.error("Task not found");
-          return;
-        }
-
-        if (!response.ok) throw new Error("Failed to fetch");
-
-        const data = await response.json();
-        setTask(data);
-      } catch (err) {
-        console.error(err);
-        setError(true);
-        toast.error("Could not load schedule details");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (taskId) {
-      fetchTask();
-    }
-  }, [taskId]);
+  const hasError = !!error;
 
   const handleBack = () => {
     router.push("/create-task");
@@ -67,7 +42,7 @@ export default function EditTaskPage() {
     );
   }
 
-  if (error || !task) {
+  if (hasError || !task) {
     return (
       <div className="mx-auto w-full max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8 pb-24 pt-8 md:py-8">
         <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center">
